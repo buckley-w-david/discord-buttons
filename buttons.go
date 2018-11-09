@@ -58,8 +58,7 @@ func NewButton(s *discordgo.Session, name string, reaction string, callback Butt
 
 // AddButtons Creates an embed in the given message containing the buttons.
 // This should be done last, after all other preperation for the button is complete.
-func AddButtons(message *discordgo.Message, buttons []button) error {
-	embed := discordgo.MessageEmbed{}
+func AddButtons(message *discordgo.MessageEmbed, buttons []button) error {
 	fields := make([]*discordgo.MessageEmbedField, len(buttons))
 
 	for i, button := range buttons {
@@ -69,7 +68,7 @@ func AddButtons(message *discordgo.Message, buttons []button) error {
 			Inline: true,
 		}
 	}
-	embed.Fields = fields
-	message.Embeds = append(message.Embeds, &embed)
+
+	message.Fields = append(message.Fields, fields...)
 	return nil
 }
