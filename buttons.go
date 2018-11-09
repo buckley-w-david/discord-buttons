@@ -1,77 +1,34 @@
 package discordbuttons
 
 import (
-	"bytes"
-	"crypto/sha1"
-
 	"github.com/bwmarrin/discordgo"
 )
 
 type Button struct {
-	Name     string
+	Data     interface{}
 	Reaction string
+	Callback func(s *discordgo.Session, r *discordgo.MessageReactionAdd, m *discordgo.Message, data interface{})
 }
 
-func NewButton(
-	s *discordgo.Session,
-	name string,
-	reaction string,
-	callback func(s *discordgo.Session, r *discordgo.MessageReactionAdd, m *discordgo.Message),
-	once bool,
-) Button {
-	h := sha1.New()
-	h.Write([]byte(name + reaction))
-	buttonSig := h.Sum(nil)
-
+// AddButton adds a listener for a specific reaction to a given message
+func AddButton(s *discordgo.Session, message *discordgo.Message, button Button, once bool) error {
 	var remove func()
-	f := func(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+	f := func(sess *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		// Reactions added by the bot do not count
-		if r.UserID == s.State.User.ID {
+		// Reactions to other messages are irrelevant
+		// Reaction recieved needs to match reaction of the button
+		if r.UserID == s.State.User.ID || message.ID != r.MessageID || r.Emoji.Name != button.Reaction {
 			return
 		}
 
-		m, err := s.ChannelMessage(r.ChannelID, r.MessageID)
-		if err != nil {
-			return
+		button.Callback(s, r, message, button.Data)
+		if remove != nil && once {
+			remove()
 		}
-
-		// Reactions to messages not by the bot are irrelevant
-		if m.Author.ID != s.State.User.ID {
-			return
-		}
-
-		// The last embed in a given message is reserved for buttons
-		// TODO: Think of alternate methods
-		buttonEmbed := m.Embeds[len(m.Embeds)-1]
-		for _, button := range buttonEmbed.Fields {
-			h := sha1.New()
-			h.Write([]byte(button.Name + r.Emoji.Name))
-			signature := h.Sum(nil)
-			if bytes.Equal(signature, buttonSig) {
-				callback(s, r, m)
-				if remove != nil && once {
-					remove()
-				}
-				return
-			}
-		}
+		return
 	}
 	remove = s.AddHandler(f)
-	return Button{
-		Name:     name,
-		Reaction: reaction,
-	}
-}
+	s.MessageReactionAdd(message.ChannelID, message.ID, button.Reaction)
 
-// AddButtons Creates an embed in the given message containing the buttons.
-// This should be done last, after all other preperation for the button is complete.
-func AddButton(message *discordgo.MessageEmbed, button Button) error {
-	buttonField := discordgo.MessageEmbedField{
-		Name:   button.Name,
-		Value:  button.Reaction,
-		Inline: true,
-	}
-
-	message.Fields = append(message.Fields, &buttonField)
 	return nil
 }
