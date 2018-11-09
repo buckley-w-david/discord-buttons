@@ -7,14 +7,17 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type ButtonFunction func(s *discordgo.Session, r *discordgo.MessageReactionAdd)
-
 type Button struct {
 	Name     string
 	Reaction string
 }
 
-func NewButton(s *discordgo.Session, name string, reaction string, callback ButtonFunction) Button {
+func NewButton(
+	s *discordgo.Session,
+	name string,
+	reaction string,
+	callback func(s *discordgo.Session, r *discordgo.MessageReactionAdd, m *discordgo.Message),
+) Button {
 	h := sha1.New()
 	h.Write([]byte(name + reaction))
 	buttonSig := h.Sum(nil)
@@ -43,7 +46,7 @@ func NewButton(s *discordgo.Session, name string, reaction string, callback Butt
 			h.Write([]byte(button.Name + r.Emoji.Name))
 			signature := h.Sum(nil)
 			if bytes.Equal(signature, buttonSig) {
-				callback(s, r)
+				callback(s, r, m)
 				return
 			}
 		}
