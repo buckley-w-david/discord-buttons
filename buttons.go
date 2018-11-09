@@ -1,4 +1,4 @@
-package buttons
+package discordbuttons
 
 import (
 	"bytes"
