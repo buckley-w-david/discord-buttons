@@ -9,12 +9,12 @@ import (
 
 type ButtonFunction func(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 
-type button struct {
+type Button struct {
 	Name     string
 	Reaction string
 }
 
-func NewButton(s *discordgo.Session, name string, reaction string, callback ButtonFunction) button {
+func NewButton(s *discordgo.Session, name string, reaction string, callback ButtonFunction) Button {
 	h := sha1.New()
 	h.Write([]byte(name + reaction))
 	buttonSig := h.Sum(nil)
@@ -50,7 +50,7 @@ func NewButton(s *discordgo.Session, name string, reaction string, callback Butt
 	}
 
 	s.AddHandler(f)
-	return button{
+	return Button{
 		Name:     name,
 		Reaction: reaction,
 	}
@@ -58,7 +58,7 @@ func NewButton(s *discordgo.Session, name string, reaction string, callback Butt
 
 // AddButtons Creates an embed in the given message containing the buttons.
 // This should be done last, after all other preperation for the button is complete.
-func AddButton(message *discordgo.MessageEmbed, button button) error {
+func AddButton(message *discordgo.MessageEmbed, button Button) error {
 	buttonField := discordgo.MessageEmbedField{
 		Name:   button.Name,
 		Value:  button.Reaction,
