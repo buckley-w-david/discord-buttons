@@ -40,7 +40,7 @@ func NewButton(s *discordgo.Session, name string, reaction string, callback Butt
 		buttonEmbed := m.Embeds[len(m.Embeds)-1]
 		for _, button := range buttonEmbed.Fields {
 			h := sha1.New()
-			h.Write([]byte(button.Name + button.Value))
+			h.Write([]byte(button.Name + r.Emoji.Name))
 			signature := h.Sum(nil)
 			if bytes.Equal(signature, buttonSig) {
 				callback(s, r)
