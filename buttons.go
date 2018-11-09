@@ -17,11 +17,13 @@ func NewButton(
 	name string,
 	reaction string,
 	callback func(s *discordgo.Session, r *discordgo.MessageReactionAdd, m *discordgo.Message),
+	once bool,
 ) Button {
 	h := sha1.New()
 	h.Write([]byte(name + reaction))
 	buttonSig := h.Sum(nil)
 
+	var remove func()
 	f := func(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		// Reactions added by the bot do not count
 		if r.UserID == s.State.User.ID {
@@ -47,12 +49,14 @@ func NewButton(
 			signature := h.Sum(nil)
 			if bytes.Equal(signature, buttonSig) {
 				callback(s, r, m)
+				if remove != nil && once {
+					remove()
+				}
 				return
 			}
 		}
 	}
-
-	s.AddHandler(f)
+	remove = s.AddHandler(f)
 	return Button{
 		Name:     name,
 		Reaction: reaction,
