@@ -11,7 +11,7 @@ type Button struct {
 }
 
 // AddButton adds a listener for a specific reaction to a given message
-func AttachButton(s *discordgo.Session, messageID string, channelID string, button Button, once bool) error {
+func AttachButton(s *discordgo.Session, messageID string, channelID string, button Button, once bool) (func(), error) {
 	var remove func()
 	f := func(sess *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		// Reactions added by the bot do not count
@@ -28,5 +28,5 @@ func AttachButton(s *discordgo.Session, messageID string, channelID string, butt
 		return
 	}
 	remove = s.AddHandler(f)
-	return nil
+	return remove, nil
 }
